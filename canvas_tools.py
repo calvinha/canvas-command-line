@@ -1,9 +1,11 @@
-import requests
-import json
-import webbrowser
-import sys
-import os
+#!/usr/bin/env python
+
 import argparse
+import json
+import os
+import requests
+import sys
+import webbrowser
 
 
 access_token = ''
@@ -21,7 +23,7 @@ def parse_args():
     parser.add_argument("class_name", help = 'Specify your class. e.g. MATH')
     parser.add_argument("class_number", help = 'Specifiy the class number. e.g. 129A')
     parser.add_argument("-a", "--listassignments", help = "List all the assignments available ", action = "store_true")
-    parser.add_argument("-g", "--getfiles", help = "Enter the amount of files you want to download", action = "store_true", type=int)
+    parser.add_argument("-g", "--getfiles", help = "Enter the amount of files you want to download",  type=int)
     parser.add_argument("-f", "--listfiles", help = "List all the files available to download", action = "store_true")
     return parser.parse_args()
 
@@ -78,23 +80,37 @@ def list_assignments(assignments, upload):
 
 
 
-def open_files(file_map, not_file):
+def open_files(file_map, files, not_file, amount):
     """Gets user input on which file(s) they would like to download"""
     if not_file:
         keyword = 'assignments'
     else:
         keyword = 'files'
-    if len(file_map) == 0: #is empty
-        print 'This course has no files'
-        return None
-    print "\nEnter the number(s) corresponding to the %s you want to download separated by spaces" % (keyword)
-    user_input = str(raw_input()).split()
-    if user_input[0].lower() == QUIT:
-        sys.exit()
-    numbers_list = [int(number) for number in user_input]
-    for number in numbers_list:
-        url = file_map[number]
-        webbrowser.open(url)
+
+
+    if amount < 0 or not_file:
+        if len(file_map) == 0: #is empty
+            print 'This course has no files'
+            return None
+        print "\nEnter the number(s) corresponding to the %s you want to download separated by spaces" % (keyword)
+        user_input = str(raw_input()).split()
+        if user_input[0].lower() == QUIT:
+            sys.exit()
+        numbers_list = [int(number) for number in user_input]
+        for number in numbers_list:
+            url = file_map[number]
+            webbrowser.open(url)
+    else:
+        # Error checking
+        if amount > len(files):
+            print "The amount you specified (%d) is greater that the total amount of files (%d) for this course." % (amount, len(files) ) 
+            return None
+        start_index = len(files) - 1
+        while (amount > 0):
+            url = files[start_index]['url']
+            webbrowser.open(url)
+            start_index = start_index - 1
+            amount = amount - 1
 
         
 def check_canvas_keys():   
@@ -174,12 +190,14 @@ def main():
     class_number = args.class_number
     class_chosen = class_name + " " + class_number
     courseid = class_dict[class_chosen]
-    
-    if args.listfiles or args.getfiles:
-        
+    url_map = None
+    if args.listfiles or args.getfiles:        
         files = get_files(courseid)
-        url_map = list_files(files)
-        open_files(url_map, False)
+        amount = args.getfiles       
+        if args.listfiles:
+            url_map = list_files(files)
+        open_files(url_map, files, False, amount)
+        
     elif args.listassignments: #To list assignments 
         assignments = get_assignments(courseid)
         url_map = list_assignments(assignments, False)
