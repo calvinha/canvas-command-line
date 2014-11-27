@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""Get files and assignments from Canvas""" 
+
+__author__ = "Calvin Ha"
+__credits__ = "Daniel Mai"
+__version__ = "1.0.0"
+__email__ = "calvinbha@gmail.com"
+
 import argparse
 import json
 import os
@@ -13,12 +20,14 @@ access_token = ''
 CANVAS_KEYS = "canvas_keys.json"
 HEADER =  {'Authorization': 'Bearer ' + access_token}
 HOST_SITE = 'sjsu.instructure.com'
-PAGE_PAGINATION_LIMIT = 50
+PAGE_PAGINATION_LIMIT = 75
 PROTOCOL = 'https://'
-QUIT = 'q'
+QUIT = "q"
 
 
 def parse_args():
+    """Generates the argument parser"""
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("class_name", help = 'Specify your class. e.g. MATH')
     parser.add_argument("class_number", help = 'Specifiy the class number. e.g. 129A')
@@ -29,10 +38,12 @@ def parse_args():
 
 
 def get_files(courseid):
-    """Returns a json object for files"""    
+    """Returns a json object for files"""
+    
     params = {'sort': 'created_at',
               'per_page': PAGE_PAGINATION_LIMIT 
     }
+    
     path = '/api/v1/courses/%s/files' % (courseid)
     url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
     files  = requests.get(url, headers=HEADER, params=params).json()
@@ -41,17 +52,20 @@ def get_files(courseid):
 
 def get_assignments(course_id):
     """Get assignments for the course"""
+    
     path = '/api/v1/courses/%s/assignments' % (course_id)
     url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
     params = {'include[]':'submission',
-              'per_page':'50'
+              'per_page': PAGE_PAGINATION_LIMIT
     }
+    
     assignments = requests.get(url, headers=HEADER, params=params).json()   
     return sorted(assignments, key = lambda assignment: assignment['due_at'])
    
 
 def list_files(files):
     """Lists all the files in the course and stores their url into a map"""
+    
     url_map ={}
     count = 1
     for theFile in files:
@@ -63,32 +77,34 @@ def list_files(files):
 
 def list_assignments(assignments, upload):
     """Lists all the assignments in the course and stores their url into a map"""
-    _map ={}
+    
+    assignments_map ={}
     
     count = 1    
     for assignment in assignments:
         if upload:                        
-            _map[count] = assignment['id'] 
+            assignments_map[count] = assignment['id'] 
         else:
-            _map[count] = assignment['html_url']        
+            assignments_map[count] = assignment['html_url']        
         print "%s.  %s" % (str(count), assignment['name'])
         count += 1
     if upload:
         print 'Enter the number corresponding to the assignment you want to turn in: '
-        return _map[int(raw_input())]
-    return _map
+        return assignments_map[int(raw_input())]
+    return assignments_map
 
 
 
-def open_files(file_map, files, not_file, amount):
+def open_files(file_map, files, is_assignment, amount):
     """Gets user input on which file(s) they would like to download"""
-    if not_file:
+    
+    if is_assignment:
         keyword = 'assignments'
     else:
         keyword = 'files'
 
 
-    if amount < 0 or not_file:
+    if amount < 0 or is_assignment:
         if len(file_map) == 0: #is empty
             print 'This course has no files'
             return None
@@ -100,7 +116,7 @@ def open_files(file_map, files, not_file, amount):
         for number in numbers_list:
             url = file_map[number]
             webbrowser.open(url)
-    else:
+    else: #User wants to download a specifed amount of files 
         # Error checking
         if amount > len(files):
             print "The amount you specified (%d) is greater that the total amount of files (%d) for this course." % (amount, len(files) ) 
@@ -116,7 +132,7 @@ def open_files(file_map, files, not_file, amount):
 def check_canvas_keys():   
     """Check if the users' Canvas access token and courses are already in the json file
 
-    if not go through prompt the user for theire Canvas access token and add their courses to the json file
+    if not go through prompt the user for their Canvas access token and add their courses to the json file
     returns a dictionary of course:id 
     
     """
@@ -157,7 +173,6 @@ def add_courses():
     course_end_date = None
 
     #Checks if the course ending date matches if so, add the course to the map
-    # print courses
 
     for course in (courses):
         ending_date = course['end_at']
@@ -174,6 +189,7 @@ def add_courses():
 
 def parse_course(course):
     """Parse the course to get the course_name and course_number"""
+    
     course = course.encode('ascii', 'ignore') #Convert to ascii
     course_list = course.split()[1] 
     course_name = course_list.split('-')
@@ -201,7 +217,7 @@ def main():
     elif args.listassignments: #To list assignments 
         assignments = get_assignments(courseid)
         url_map = list_assignments(assignments, False)
-        open_files(url_map, True)
+        open_files(url_map, files, True, amount)
     
 
         
