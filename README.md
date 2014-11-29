@@ -14,7 +14,11 @@ You will need a Canvas access token to run the script.
 
 4. Scroll to the bottom of the page and click on the light blue button that reads: "New Access Token"
 
-5. Copy your Canvas access token. 
+5. Copy your Canvas access token.
+
+6. Download [https://github.com/calvinha/canvas-command-line/archive/master.zip](https://github.com/calvinha/canvas-command-line/archive/master.zip)
+
+7. Unzip and run canvas-tools.py
 
 ## Usage
 ```
