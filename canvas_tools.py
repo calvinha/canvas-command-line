@@ -107,7 +107,7 @@ def open_specific_files(file_map, is_assignment):
     if len(file_map) == 0: #is empty
         print 'This course has no files'
         return None
-    print "\nEnter the number(s) corresponding to the %s you want to download separated by spaces" % (keyword)
+    print "\nEnter the number(s) corresponding to the %s you want to download separated by spaces:" % (keyword)
     user_input = str(raw_input()).split()
     if user_input[0].lower() == QUIT:
         sys.exit()
