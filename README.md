@@ -18,7 +18,7 @@ You will need a Canvas access token to run the script.
 
 6. Download [https://github.com/calvinha/canvas-command-line/archive/master.zip](https://github.com/calvinha/canvas-command-line/archive/master.zip)
 
-7. Unzip and run canvas-tools.py
+7. Unzip and run canvas_tools.py
 
 ## Usage
 ```
@@ -45,7 +45,7 @@ This will download the *last* 3 files from the class MATH 129A.
 
 ##An example run: 
 
-<pre><code>python canvas-tools.py MATH 129 -f
+<pre><code>python canvas_tools.py MATH 129 -f
 
 Enter the number(s) corresponding to the files you want to download separated by spaces:
 
