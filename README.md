@@ -22,7 +22,7 @@ You will need a Canvas access token to run the script.
 
 ## Usage
 ```
-python canvas-tools.py [course-name] [course-number]
+python canvas_tools.py [course-name] [course-number]
 ```
 
 * This will download the last file from the course and displays a download prompt from your web browser.
@@ -31,7 +31,7 @@ python canvas-tools.py [course-name] [course-number]
 
 ## Example
 ```
-python canvas-tools.py MATH 129A
+python canvas_tools.py MATH 129A
 ```
 
 ## Optional arguments
@@ -39,7 +39,7 @@ python canvas-tools.py MATH 129A
 * To list and download specific file(s) use the `-f` option
 * To download the last 'n' files, use the `-g` option with a numeric argument
 ``` 
-python canvas-tools.py MATH 129A -g 3
+python canvas_tools.py MATH 129A -g 3
 ```
 This will download the *last* 3 files from the class MATH 129A.
 
