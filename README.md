@@ -12,15 +12,15 @@ You will need a Canvas access token to run the script.
 
    - For example: [https://sjsu.instructure.com/profile/settings](https://sjsu.instructure.com/profile/settings)
 
-4. Scroll to the bottom of the page and click on the light blue button that reads: "New Access Token"
+3. Scroll to the bottom of the page and click on the light blue button that reads: "New Access Token"
 
-5. You can put anything you like for the "Purpose" option, and click "Generate Token"
+4. You can put anything you like for the "Purpose" option, and click "Generate Token"
 
-6. Copy your Canvas access token to a secure place. 
+5. Copy your Canvas access token to a secure place. 
 
-7. Clone the repository: git clone https://github.com/calvinha/canvas-command-line.git
+6. Clone the repository: git clone https://github.com/calvinha/canvas-command-line.git
 
-9. Run canvas_tools.py
+7. Run canvas_tools.py
 
 ## Usage
 ```
