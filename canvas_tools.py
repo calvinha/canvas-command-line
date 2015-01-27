@@ -39,6 +39,8 @@ def parse_args():
 
 
 def get_folders(courseid):
+    """Returns all the folders in the course"""
+    
     path = '/api/v1/courses/%s/folders/by_path' % courseid
     url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
     root_folder = requests.get(url, headers=HEADER).json()
@@ -224,8 +226,6 @@ def main():
     courseid = class_dict[class_chosen]
     url_map = None
 
-
-    #get_folders(courseid)
     if args.listassignments: #To list assignments 
         assignments = get_assignments(courseid)
         url_map = list_assignments(assignments, False)
