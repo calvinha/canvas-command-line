@@ -14,9 +14,9 @@ You will need a Canvas access token to run the script.
 
 4. Scroll to the bottom of the page and click on the light blue button that reads: "New Access Token"
 
-5. You can put anything you like for the "Purpose" option, and then click "Generate Token"
+5. You can put anything you like for the "Purpose" option, and click "Generate Token"
 
-6. Copy your Canvas access token to a secure place 
+6. Copy your Canvas access token to a secure place. 
 
 7. Download [https://github.com/calvinha/canvas-command-line/archive/master.zip](https://github.com/calvinha/canvas-command-line/archive/master.zip)
 
