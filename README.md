@@ -18,9 +18,9 @@ You will need a Canvas access token to run the script.
 
 6. Copy your Canvas access token to a secure place. 
 
-7. Download [https://github.com/calvinha/canvas-command-line/archive/master.zip](https://github.com/calvinha/canvas-command-line/archive/master.zip)
+7. Clone the repository: git clone https://github.com/calvinha/canvas-command-line.git
 
-8. Unzip and run canvas_tools.py
+9. Run canvas_tools.py
 
 ## Usage
 ```
