@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 """Get files and assignments from Canvas""" 
@@ -37,6 +38,18 @@ def parse_args():
     return parser.parse_args()
 
 
+def get_folders(courseid):
+    path = '/api/v1/courses/%s/folders/by_path' % courseid
+    url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
+    root_folder = requests.get(url, headers=HEADER).json()
+    for folder in root_folder:
+        id = folder['id']
+    new_path = '/api/v1/folders/%s/folders' % id
+    new_url = '%s%s%s' % (PROTOCOL, HOST_SITE, new_path)
+    print  requests.get(new_url, headers=HEADER).json()
+
+    
+    
 def get_files(courseid):
     """Returns a json object for files"""
     
@@ -172,14 +185,15 @@ def add_courses():
     path = '/api/v1/courses/'
     url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
     courses = requests.get(url, headers = HEADER, params = params).json()
-    course_end_date = None
+    course_start_date = None
 
-    #Checks if the course ending date matches if so, add the course to the map
-
-    for course in (courses):
-        ending_date = course['end_at']
-        if course_end_date == None or course_end_date == ending_date:
-            course_end_date = ending_date
+    #Checks if the course starting date matches if so, add the course to the map
+    courses = sorted(courses, key = lambda courses:courses['start_at'], reverse=True)
+    
+    for course in (courses):        
+        start_date = course['start_at']
+        if course_start_date == None or course_start_date == start_date:
+            course_start_date = start_date
             course_name =  parse_course(course['name'])
             course_id = course['id']
             #Add to the map
@@ -210,6 +224,8 @@ def main():
     courseid = class_dict[class_chosen]
     url_map = None
 
+
+    #get_folders(courseid)
     if args.listassignments: #To list assignments 
         assignments = get_assignments(courseid)
         url_map = list_assignments(assignments, False)
