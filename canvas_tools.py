@@ -15,7 +15,6 @@ import requests
 import sys
 import webbrowser
 
-
 access_token = ''
 
 CANVAS_KEYS = "canvas_keys.json"
@@ -35,6 +34,7 @@ def parse_args():
     parser.add_argument("-a", "--listassignments", help = "List all the assignments available ", action = "store_true")
     parser.add_argument("-g", "--getfiles", help = "Enter the amount of files you want to download",  type=int)
     parser.add_argument("-f", "--listfiles", help = "List all the files available to download", action = "store_true")
+    parser.add_argument("-u", "--update-courses", help="Update your courses" action="store_true")
     return parser.parse_args()
 
 
@@ -173,7 +173,7 @@ def check_canvas_keys():
         canvas_dict = add_courses()
         canvas_dict['access-token'] = access_token
         #Writes JSON data to a new file called courses.json
-        with open(CANVAS_KEYS, 'w') as outfile:
+        with open(CANVAS_KEYS, 'r+') as outfile:
             json.dump(canvas_dict, outfile)        
     return canvas_dict
         
@@ -188,10 +188,12 @@ def add_courses():
     url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
     courses = requests.get(url, headers = HEADER, params = params).json()
     course_start_date = None
-
-    #Checks if the course starting date matches if so, add the course to the map
-    courses = sorted(courses, key = lambda courses:courses['start_at'], reverse=True)
     
+    # filter out the restricted courses
+    valid_courses = [ co for co in courses if co.get('start_at')]
+    # none if the course starting date matches if so, add the course to the map
+    courses = sorted(valid_courses, key = lambda course:course['start_at'], reverse=True)
+
     for course in (courses):        
         start_date = course['start_at']
         if course_start_date == None or course_start_date == start_date:
@@ -204,6 +206,15 @@ def add_courses():
             return courses_map
     return None
 
+def update_courses():
+    """Updates the JSON file with the most recent courses"""
+    current_courses = add_courses()
+    with open(CANVAS_KEYS, 'r+') as f:
+        canvas_dict = json.loads(f.read())
+        for course, id in current_courses.iteritems():
+            canvas_dict[course] = id
+        f.seek(0)
+        json.dump(canvas_dict, f)
 
 def parse_course(course):
     """Parse the course to get the course_name and course_number"""
@@ -213,8 +224,6 @@ def parse_course(course):
     course_name = course_list.split('-')
     course_identifier = course_name[0] + " " + course_name[1]
     return course_identifier
-
-
 
 def main():    
 
@@ -230,6 +239,8 @@ def main():
         assignments = get_assignments(courseid)
         url_map = list_assignments(assignments, False)
         open_specific_files(url_map,  True)
+    if args.update_courses:
+        update_courses()
     else:
         files = get_files(courseid)
         if args.listfiles: 
@@ -242,9 +253,6 @@ def main():
             if amount == None: 
                 amount = 1
             open_num_files(files, amount)        
-
-    
-
         
 if __name__ == "__main__":
     main()
