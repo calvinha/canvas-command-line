@@ -22,6 +22,10 @@ You will need a Canvas access token to run the script.
 
 7. Run canvas_tools.py
 
+8. You will prompted to enter your Canvas access token and choose whether this token will be stored in the same directory.
+
+    - The program will prompt you every time for the token if you choose to *not* store it.
+
 ## Usage
 ```
 python canvas_tools.py [course-name] [course-number]

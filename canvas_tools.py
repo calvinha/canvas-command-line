@@ -14,16 +14,17 @@ import os
 import requests
 import sys
 import webbrowser
-
-access_token = ''
+import getpass
 
 CANVAS_KEYS = "canvas_keys.json"
-HEADER = {'Authorization': 'Bearer ' + access_token}
-HOST_SITE = 'sjsu.instructure.com'
 PAGE_PAGINATION_LIMIT = 75
 PROTOCOL = 'https://'
 QUIT = "q"
 
+class CanvasSession():
+    def __init__(self, host_site, access_token):
+        self.host_site = host_site
+        self.header = {"Authorization" : "Bearer " + access_token}
 
 def parse_args():
     """Generates the argument parser"""
@@ -34,25 +35,24 @@ def parse_args():
     parser.add_argument("-a", "--listassignments", help = "List all the assignments available ", action = "store_true")
     parser.add_argument("-g", "--getfiles", help = "Enter the amount of files you want to download",  type=int)
     parser.add_argument("-f", "--listfiles", help = "List all the files available to download", action = "store_true")
-    parser.add_argument("-u", "--update-courses", help="Update your courses" action="store_true")
+    parser.add_argument("-u", "--update-courses", help="Update your courses", action="store_true")
     return parser.parse_args()
 
 
-def get_folders(courseid):
+def get_folders(courseid, header, host_site):
     """Returns all the folders in the course"""
     
     path = '/api/v1/courses/%s/folders/by_path' % courseid
-    url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
-    root_folder = requests.get(url, headers=HEADER).json()
+    url = '%s%s%s' % (PROTOCOL, host_site, path)
+    root_folder = requests.get(url, headers=header).json()
     for folder in root_folder:
         id = folder['id']
     new_path = '/api/v1/folders/%s/folders' % id
-    new_url = '%s%s%s' % (PROTOCOL, HOST_SITE, new_path)
-    print  requests.get(new_url, headers=HEADER).json()
+    new_url = '%s%s%s' % (PROTOCOL, host_site, new_path)
+    print  requests.get(new_url, headers=header).json()
 
     
-    
-def get_files(courseid):
+def get_files(courseid, header, host_site):
     """Returns a json object for files"""
     
     params = {'sort': 'created_at',
@@ -60,21 +60,21 @@ def get_files(courseid):
     }
     
     path = '/api/v1/courses/%s/files' % (courseid)
-    url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
-    files  = requests.get(url, headers=HEADER, params=params).json()
+    url = '%s%s%s' % (PROTOCOL, host_site, path)
+    files  = requests.get(url, headers=header, params=params).json()
     return files
 
 
-def get_assignments(course_id):
+def get_assignments(course_id, header, host_site):
     """Get assignments for the course"""
     
     path = '/api/v1/courses/%s/assignments' % (course_id)
-    url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
+    url = '%s%s%s' % (PROTOCOL, host_site, path)
     params = {'include[]':'submission',
               'per_page': PAGE_PAGINATION_LIMIT
     }
     
-    assignments = requests.get(url, headers=HEADER, params=params).json()   
+    assignments = requests.get(url, headers=header, params=params).json()   
     return sorted(assignments, key = lambda assignment: assignment['due_at'])
    
 
@@ -82,47 +82,37 @@ def list_files(files):
     """Lists all the files in the course and stores their url into a map"""
     
     url_map ={}
-    count = 1
-    for theFile in files:
-        url_map[count] = theFile['url']
-        print "%s.  %s" % (str(count), theFile['display_name'])
-        count += 1
+    for i, the_file in enumerate(files, 1):
+        url_map[i] = the_file['url']
+        print "%s.  %s" % (str(i), the_file['display_name'])
     return url_map
-
 
 def list_assignments(assignments, upload):
     """Lists all the assignments in the course and stores their url into a map"""
     
     assignments_map ={}
     
-    count = 1    
-    for assignment in assignments:
+    for i, assignment in enumerate(assignments, 1):
         if upload:                        
-            assignments_map[count] = assignment['id'] 
+            assignments_map[i] = assignment['id'] 
         else:
-            assignments_map[count] = assignment['html_url']        
-        print "%s.  %s" % (str(count), assignment['name'])
-        count += 1
+            assignments_map[i] = assignment['html_url']        
+        print "%s.  %s" % (str(i), assignment['name'])
     if upload:
         print 'Enter the number corresponding to the assignment you want to turn in: '
         return assignments_map[int(raw_input())]
     return assignments_map
 
-
-
 def open_specific_files(file_map, is_assignment):
     """Gets user input on which specific file(s) they want to download"""
-    
-    if is_assignment:
-        keyword = 'assignments'
-    else:
-        keyword = 'files'
 
+    keyword = "assignments" if is_assignment else "files"
 
-    if len(file_map) == 0: #is empty
-        print 'This course has no files'
-        return None
+    if not file_map: #is empty
+        print 'This course has no %s listed' % keyword
+        sys.exit()
     print "\nEnter the number(s) corresponding to the %s you want to download separated by spaces:" % (keyword)
+
     user_input = str(raw_input()).split()
     if user_input[0].lower() == QUIT:
         sys.exit()
@@ -135,7 +125,7 @@ def open_num_files(files, amount):
     """Gets user input on the last n files they want to download"""
 
     if amount > len(files):
-        print "The amount you specified (%d) is greater that the total amount of files (%d) for this course." % (amount, len(files) ) 
+        print "The amount you specified (%d) is greater than the total amount of files (%d) for this course." % (amount, len(files) ) 
         return None
     start_index = len(files) - 1
     while (amount > 0):
@@ -143,8 +133,6 @@ def open_num_files(files, amount):
         webbrowser.open(url)
         start_index = start_index - 1
         amount = amount - 1
-
-
         
 def check_canvas_keys():   
     """Check if the users' Canvas access token and courses are already in the json file
@@ -153,40 +141,44 @@ def check_canvas_keys():
     returns a dictionary of course:id 
     
     """
-    global access_token 
     
     canvas_dict = {}
     directory = os.getcwd()
     canvas_file = directory + '/' + CANVAS_KEYS
-    if os.path.isfile(canvas_file):
+    store_token = ''
+    file_exists = os.path.isfile(canvas_file)
+
+    if file_exists: 
         #Gets JSON data and puts it into a dict
         json_data = open(CANVAS_KEYS)       
         canvas_dict = json.load(json_data)
-        access_token = canvas_dict['access-token']
-        HEADER['Authorization'] =  'Bearer ' + access_token
         json_data.close()
-    else:
-        #Ask the user for their access token 
-        print "Please enter your Canvas access token: "
-        access_token = raw_input()
-        HEADER['Authorization'] =  'Bearer ' + access_token
-        canvas_dict = add_courses()
+    if not canvas_dict.get('access-token') or not file_exists:
+        access_token = getpass.getpass('Please enter your Canvas access token: ')
+        print "Do you want your access token to be stored in this directory? [y/n]: "
+        store_token = raw_input()
         canvas_dict['access-token'] = access_token
-        #Writes JSON data to a new file called courses.json
-        with open(CANVAS_KEYS, 'r+') as outfile:
-            json.dump(canvas_dict, outfile)        
+    if not file_exists:
+        print "Please enter your host school: "
+        host_site = raw_input()
+        canvas_dict = add_courses({'Authorization': 'Bearer ' + access_token}, host_site)
+        canvas_dict['host-site']  = host_site
+        if store_token in ('yes', 'y'):
+            canvas_dict['access-token'] = access_token  
+    if not file_exists or store_token == 'y': 
+        with open(CANVAS_KEYS, 'w') as outfile:
+            json.dump(canvas_dict, outfile, indent=4)        
+        canvas_dict['access-token'] = access_token
     return canvas_dict
         
-
-        
-def add_courses():
+def add_courses(header, host_site):
     """Add the students' current courses to a map"""
     
     courses_map = {}
     params = {'state': 'available'}
     path = '/api/v1/courses/'
-    url = '%s%s%s' % (PROTOCOL, HOST_SITE, path)
-    courses = requests.get(url, headers = HEADER, params = params).json()
+    url = '%s%s%s' % (PROTOCOL, host_site, path)
+    courses = requests.get(url, headers = header, params = params).json()
     course_start_date = None
     
     # filter out the restricted courses
@@ -206,15 +198,16 @@ def add_courses():
             return courses_map
     return None
 
-def update_courses():
+def update_courses(header, host_site):
     """Updates the JSON file with the most recent courses"""
-    current_courses = add_courses()
+    current_courses = add_courses(header, host_site)
     with open(CANVAS_KEYS, 'r+') as f:
         canvas_dict = json.loads(f.read())
         for course, id in current_courses.iteritems():
             canvas_dict[course] = id
         f.seek(0)
-        json.dump(canvas_dict, f)
+        json.dump(canvas_dict, f, indent=4)
+    print 'Courses have been updated'
 
 def parse_course(course):
     """Parse the course to get the course_name and course_number"""
@@ -226,23 +219,23 @@ def parse_course(course):
     return course_identifier
 
 def main():    
-
-    class_dict = check_canvas_keys()
     args = parse_args()
+    user_keys = check_canvas_keys()
     class_name = args.class_name.upper()
     class_number = args.class_number
     class_chosen = class_name + " " + class_number
-    courseid = class_dict[class_chosen]
+    courseid = user_keys[class_chosen]
+    canvas = CanvasSession(user_keys['host-site'], user_keys['access-token'])
     url_map = None
 
     if args.listassignments: #To list assignments 
-        assignments = get_assignments(courseid)
+        assignments = get_assignments(courseid, canvas.header, canvas.host_site)
         url_map = list_assignments(assignments, False)
         open_specific_files(url_map,  True)
-    if args.update_courses:
-        update_courses()
+    elif args.update_courses:
+        update_courses(canvas.header, canvas.host_site)
     else:
-        files = get_files(courseid)
+        files = get_files(courseid, canvas.header, canvas.host_site)
         if args.listfiles: 
             url_map = list_files(files)
             open_specific_files(url_map, False)
